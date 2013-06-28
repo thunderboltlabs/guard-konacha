@@ -3,10 +3,23 @@ require 'childprocess'
 require 'capybara'
 require 'active_support/core_ext/module/delegation'
 require 'active_support/core_ext/object/blank'
-require 'konacha'
 require 'konacha/reporter'
 require 'konacha/formatter'
 require 'konacha/runner'
+
+module Konacha
+  class << self
+    def formatters
+      if ENV['FORMAT']
+        ENV['FORMAT'].split(',').map do |string|
+          eval(string).new(STDOUT)
+        end
+      else
+        [Konacha::Formatter.new(STDOUT)]
+      end
+    end
+  end
+end
 
 module Guard
   class Konacha
@@ -115,7 +128,7 @@ module Guard
       end
 
       def run_all_on_start
-         run_all if @options[:all_on_start]
+        run_all if @options[:all_on_start]
       end
 
       private
@@ -153,7 +166,7 @@ module Guard
           @process.io.inherit! if ::Guard.respond_to?(:options) && ::Guard.options && ::Guard.options[:verbose]
           @process.start
 
-           Timeout::timeout(@options[:spawn_wait]) do
+          Timeout::timeout(@options[:spawn_wait]) do
             until konacha_running?
               sleep(0.2)
             end
